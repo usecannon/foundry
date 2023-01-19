@@ -78,6 +78,7 @@ pub mod in_memory_db;
 pub mod inspector;
 pub mod state;
 pub mod storage;
+use serde::Deserialize;
 
 // Gas per transaction not creating a contract.
 pub const MIN_TRANSACTION_GAS: U256 = U256([21_000, 0, 0, 0]);
@@ -561,9 +562,11 @@ impl Backend {
     }
 
     /// Deserialize and add all chain data to the backend storage
-    pub async fn load_state(&self, buf: Bytes) -> Result<bool, BlockchainError> {
-        let state: SerializableState =
-            serde_json::from_slice(&buf.0).map_err(|_| BlockchainError::FailedToDecodeStateDump)?;
+    pub fn load_state(&self, buf: Bytes) -> Result<bool, BlockchainError> {
+        let mut deserializer = serde_json::Deserializer::from_slice(&buf.0);
+        deserializer.disable_recursion_limit();
+        let state = SerializableState::deserialize(&mut deserializer)
+            .map_err(|_| BlockchainError::FailedToDecodeStateDump)?;
 
         if !self.db.write().await.load_state(state)? {
             Err(RpcError::invalid_params(
