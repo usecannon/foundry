@@ -562,7 +562,7 @@ impl Backend {
     }
 
     /// Deserialize and add all chain data to the backend storage
-    pub fn load_state(&self, buf: Bytes) -> Result<bool, BlockchainError> {
+    pub async fn load_state(&self, buf: Bytes) -> Result<bool, BlockchainError> {
         let mut deserializer = serde_json::Deserializer::from_slice(&buf.0);
         deserializer.disable_recursion_limit();
         let state = SerializableState::deserialize(&mut deserializer)
